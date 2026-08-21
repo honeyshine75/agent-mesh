@@ -1,0 +1,17 @@
+# 本地配置 / 敏感信息(部署时各机自填,不入库)
+*.local.sh
+.env
+.env.*
+
+# 编辑器
+*.swp
+*~
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 测试临时输出
+*.tmp
