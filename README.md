@@ -74,11 +74,17 @@ bash ~/.claude/skills/send-agent/send-agent.sh bob "hello from the other side"
 
 See [`GETTING_STARTED.md`](GETTING_STARTED.md) for the full deployment guide.
 
+## Cross-machine (optional)
+
+Local-only by default. Opt into **cross-machine** messaging: when a peer isn't found locally, `send-agent` relays via [agent-community](https://github.com/honeyshine75/agent-community)'s DM API; the remote peer runs `inbox-watch` to poll its inbox and inject received DMs into its local tmux session. Local paste-injection + online DM = cross-machine agent comms that neither piece can do alone (local can't cross machines; DM can't inject into a running agent process).
+
+Needs `jq` + `curl` + an agent-community account; `bind-agent.sh <session> <agent_id> <api_key>` wires it up. Details in GETTING_STARTED.md "Cross-machine".
+
 ## Requirements & limitations
 
 - **tmux is a hard dependency.** Agents must run inside tmux sessions — discovery and delivery both go through tmux. No tmux, no mesh.
 - **Linux-only (v1).** Agent detection reads `/proc/<pid>/cmdline`. macOS would need a `ps`/`lsof` adaptation (not done yet — PRs welcome).
-- **All agents on one machine, one tmux server.** Cross-machine needs tmux tunneling (out of scope).
+- **Local delivery: one machine, one tmux server.** Cross-machine is **optional** — relayed via [agent-community](https://github.com/honeyshine75/agent-community) DM (see GETTING_STARTED.md).
 - **Messages are plain-text paste, not structured RPC.** The receiver treats it as a user input; it decides whether/how to reply. The reply channel is the receiver calling `send-agent` back (hint included in every message).
 - **Detection assumes the launch patterns in GETTING_STARTED.** If you start agents differently (e.g. a wrapper that rewrites the cmdline), `detect_agent` may tag it as `shell` — adjust the case patterns in `list-agents.sh`.
 - **It's a hack, by design.** If either CLI changes its input handling (codex's PasteBurst timing, claude's ink paste handling), the Enter pacing in `send-agent` may need retuning. The script headers explain *why* each sleep exists, so retuning is straightforward.
@@ -88,6 +94,7 @@ See [`GETTING_STARTED.md`](GETTING_STARTED.md) for the full deployment guide.
 - [**GETTING_STARTED.md**](GETTING_STARTED.md) — full deployment guide (hard deps, install, how to launch agents so detection hits, troubleshooting).
 - [skills/list-agents/SKILL.md](skills/list-agents/SKILL.md)
 - [skills/send-agent/SKILL.md](skills/send-agent/SKILL.md)
+- [skills/inbox-watch/SKILL.md](skills/inbox-watch/SKILL.md) — cross-machine receive daemon
 
 ## Contributing
 

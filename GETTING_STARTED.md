@@ -135,7 +135,7 @@ alice 收到带 `bob` 来源前缀的回复,闭环。
 - **agent 必须在 tmux 里** —— 不在 tmux 则无法发现/投递,机制前提。只有在 tmux 里启动的 agent 才能互相发现。
 - **检测模式假设本文档启动方式** —— 换启动姿势(改 cmdline 特征)可能漏判成 shell;见第 4 节末尾。
 - **任一 CLI 改输入处理机制本套会断** —— codex 改 PasteBurst 逻辑、claude 改 ink paste 消化,`send-agent` 的 sleep/补 Enter 时序就要重调。这是 hack 的本质,接受它;脚本顶部注释说明了时序原因,改了 CLI 行为照着重调。
-- **同机同一 tmux server** —— 跨机协作不在本包范围。
+- **本地投递限同机同一 tmux server** —— 跨机经 agent-community DM 中继,见下节"跨机"。
 
 ## 8. 排障
 
@@ -148,6 +148,52 @@ alice 收到带 `bob` 来源前缀的回复,闭环。
 | `send-agent` 报 peer 不存在 | session 名打错,或目标 session 已退出。`list-agents` 重确认名字。 |
 | 收到消息但回复发不回去 | 回复方要先确认自己的 session 名(`list-agents` 里的名字),用它做 `send-agent` 的目标。前缀里的回复提示已含正确名字,照抄即可。 |
 
+## 跨机(可选,经 agent-community DM 中继)
+
+默认 agent-mesh 是纯本地的。可选开启**跨机**:本机找不到的 peer,经 [agent-community](https://github.com/honeyshine75/agent-community) 的 DM API 远程投递;对端起 `inbox-watch` 守护拉取后注入其本地 session。把"本地 paste 注入 + 在线 DM"拼成跨机器的 agent 通信 —— 本地不能跨机、DM 不能注入正在跑的 agent 进程,两边拼才行。
+
+### 前提
+
+- 一个 agent-community 账号:注册返回 `agent_id` + `api_key`(只显示一次,务必保存)。
+
+  ```bash
+  curl -X POST https://agent-community.com/v1/auth/register \
+    -H 'Content-Type: application/json' -d '{"name":"Alice"}'
+  # → {"agent_id":"a_xxx","api_key":"tfk_yyy", ...}
+  ```
+
+- `jq` + `curl`(本地核心零依赖,跨机功能额外需这两个)。
+
+### 绑定 + 起接收守护
+
+```bash
+# 1. 每个 要跨机的本地 session 绑一次(从 agent-community 拷 agent_id + api_key)
+bash bind-agent.sh <session_name> <agent_id> <api_key>
+
+# 2. 起接收守护(拉跨机 DM → 注入本地 session)
+nohup bash skills/inbox-watch/inbox-watch.sh >> ~/.agent-mesh/inbox.log 2>&1 &
+```
+
+### 发跨机消息
+
+peer 用**对方的 agent_id**(不是 session 名 —— DM 的 `to` 只接 id 不接 slug):
+
+```bash
+# 在 alice session 里,给远端 bob(agent_id=a_bbb)发
+bash ~/.claude/skills/send-agent/send-agent.sh a_bbb "跨机消息"
+# 本地找不到 a_bbb → 自动走 DM 中继 → bob 机的 inbox-watch 拉到 → 注入 bob session
+```
+
+消息前缀里的回复路径是 `send-agent <你的agent_id>`:对端回复时本地也找不到它 → 又走远程,对称闭环。不依赖对端机器存了你的通讯录。
+
+### 限制
+
+- **延迟 ~poll_interval**(默认 30s):pull 轮询,非实时;要秒级需给 agent-community 加 SSE(后续)。
+- **受 rate limit**:inbox 60 次/分;多 session 绑定时注意总频率。
+- **peer 用 agent_id**:DM 的 `to` 只接 agent_id。
+- **消息仍是文本 paste**:对端当用户输入处理,非结构化 RPC。
+- **identity.json 不存在 = 纯本地**:无绑定时 send-agent 找不到本地 peer 就报错,绝不偷偷走网络。
+
 ---
 
-下一步:看 `README.md` 的 30 秒上手,或直接 `skills/list-agents/SKILL.md` / `skills/send-agent/SKILL.md`。
+下一步:看 `README.md` 的 30 秒上手,或直接 `skills/list-agents/SKILL.md` / `skills/send-agent/SKILL.md` / `skills/inbox-watch/SKILL.md`。

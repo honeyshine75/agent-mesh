@@ -11,11 +11,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
 SRC_LIST="$SCRIPT_DIR/skills/list-agents"
 SRC_SEND="$SCRIPT_DIR/skills/send-agent"
+SRC_WATCH="$SCRIPT_DIR/skills/inbox-watch"
 
 echo "安装目录: $SKILLS_DIR"
 mkdir -p "$SKILLS_DIR"
 
-for src in "$SRC_LIST" "$SRC_SEND"; do
+for src in "$SRC_LIST" "$SRC_SEND" "$SRC_WATCH"; do
     name=$(basename "$src")
     dst="$SKILLS_DIR/$name"
     if [ -L "$dst" ] || [ -e "$dst" ]; then
@@ -26,7 +27,7 @@ for src in "$SRC_LIST" "$SRC_SEND"; do
     echo "  ✓ $name → $dst"
 done
 
-chmod +x "$SRC_LIST/list-agents.sh" "$SRC_SEND/send-agent.sh" 2>/dev/null || true
+chmod +x "$SRC_LIST/list-agents.sh" "$SRC_SEND/send-agent.sh" "$SRC_WATCH/inbox-watch.sh" "$SCRIPT_DIR/bind-agent.sh" 2>/dev/null || true
 
 cat <<EOF
 

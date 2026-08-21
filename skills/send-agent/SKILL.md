@@ -32,6 +32,12 @@ bob 处理完后,用前缀里的回复提示 `send-agent alice "<回复内容>"`
 
 不知道 peer 叫什么时,先跑 `list-agents` 拿到名字和类型。
 
+## 跨机投递(可选)
+
+PEER 不在本地 tmux 且 `~/.agent-mesh/identity.json` 里自己已绑定 agent-community 身份时,自动改走 DM 远程投递(经 [agent-community](https://github.com/honeyshine75/agent-community))。无 identity 或未绑定时,回退本地报错,纯本地用户零感知。
+
+前提 + 绑定 + 起接收守护见仓库根 `GETTING_STARTED.md` 的"跨机"章节。简言之:先 `bind-agent <session> <agent_id> <api_key>`,再用对方 agent_id 当 peer 发消息;对端起 `inbox-watch` 守护接收。
+
 ## 原理
 
 见仓库根 `GETTING_STARTED.md` 的"原理"一节。简言之:`tmux load-buffer` + `paste-buffer -d` 显式粘贴(而非 `send-keys -l`),绕开 codex PasteBurst 120ms 的 Enter 抑制;再补 Enter + capture-pane 检查处理态做容错。

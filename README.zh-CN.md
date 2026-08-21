@@ -74,11 +74,17 @@ bash ~/.claude/skills/send-agent/send-agent.sh bob "hello from the other side"
 
 完整部署说明见 [`GETTING_STARTED.md`](GETTING_STARTED.md)。
 
+## 跨机(可选)
+
+默认纯本地。可选开启**跨机**:本机找不到的 peer,`send-agent` 经 [agent-community](https://github.com/honeyshine75/agent-community) 的 DM API 远程投递;对端跑 `inbox-watch` 轮询收件箱,把收到的 DM 注入其本地 tmux session。本地 paste 注入 + 在线 DM = 跨机器的 agent 通信 —— 单边都做不到(本地不能跨机,DM 不能注入正在跑的 agent 进程)。
+
+需 `jq` + `curl` + agent-community 账号;`bind-agent.sh <session> <agent_id> <api_key>` 绑定身份。详见 GETTING_STARTED.md "跨机" 节。
+
 ## 要求与限制
 
 - **tmux 是硬依赖。** agent 必须跑在 tmux session 里 —— 发现和投递都走 tmux。没 tmux,就没 mesh。
 - **v1 仅 Linux。** agent 检测读 `/proc/<pid>/cmdline`。macOS 需改用 `ps`/`lsof` 适配(未做 —— 欢迎 PR)。
-- **所有 agent 同机、同一 tmux server。** 跨机需 tmux 隧道(不在本包范围)。
+- **本地投递:同机、同一 tmux server。** 跨机**可选** —— 经 [agent-community](https://github.com/honeyshine75/agent-community) DM 中继(见 GETTING_STARTED.md)。
 - **消息是纯文本粘贴,非结构化 RPC。** 接收方把它当一条用户输入处理,自己决定回不回、怎么回。回复通道是接收方调 `send-agent` 发回来(每条消息都附回复提示)。
 - **检测假设按 GETTING_STARTED 的方式启动 agent。** 若启动姿势不同(如套了 wrapper 改了 cmdline),`detect_agent` 可能判成 `shell` —— 调 `list-agents.sh` 里的 case 模式即可。
 - **本质是 hack,接受它。** 若任一 CLI 改了输入处理(codex PasteBurst 时序、claude ink paste 消化),`send-agent` 的 Enter 节奏可能要重调。脚本头部注释说明了每个 sleep 存在的*原因*,重调不费劲。
@@ -88,10 +94,11 @@ bash ~/.claude/skills/send-agent/send-agent.sh bob "hello from the other side"
 - [**GETTING_STARTED.md**](GETTING_STARTED.md) —— 完整部署说明(硬依赖、安装、怎么启动 agent 让检测命中、排障)。
 - [skills/list-agents/SKILL.md](skills/list-agents/SKILL.md)
 - [skills/send-agent/SKILL.md](skills/send-agent/SKILL.md)
+- [skills/inbox-watch/SKILL.md](skills/inbox-watch/SKILL.md) —— 跨机接收守护
 
 ## 贡献
 
-欢迎贡献 —— fork、clone、提 PR。这是个聚焦的小工具,我们有意保持小:Bug 修复、macOS 支持、新的 agent 类型检测模式可直接提 PR;更大的改动(结构化 RPC、跨机)请先开 issue。fork→分支→测试→PR 流程和常见改动位置见 [**CONTRIBUTING.md**](CONTRIBUTING.md)。
+欢迎贡献 —— fork、clone、提 PR。这是个聚焦的小工具,我们有意保持小:Bug 修复、macOS 支持、新的 agent 类型检测模式可直接提 PR;更大的改动(结构化 RPC)请先开 issue。fork→分支→测试→PR 流程和常见改动位置见 [**CONTRIBUTING.md**](CONTRIBUTING.md)。
 
 ## 许可证
 
